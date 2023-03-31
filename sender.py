@@ -153,16 +153,16 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
                 string+=s
                 
             
-        message = str(SEQ)+' '+str(ACK)+' '+string # get next 20 bytes in text file
-        checksum(string)
-        message+=' '+string
+        message = str(SEQ)+' '+str(ACK)+' '+string+' ' # get next 20 bytes in text file
+        ch = checksum(message)
+        message+=ch
         print(message)
         pointer+=20; # increment pointer
         
 
         clientSocket.send(message.encode()) # send message
         total_packet_sent+=1
-        
+
         
         to_send_size-=20
         
