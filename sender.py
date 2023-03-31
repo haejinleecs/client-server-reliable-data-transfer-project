@@ -71,7 +71,7 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     """
 
     ## STEP 0: PRINT YOUR NAME AND DATE TIME
-    name = "<YOUR NAME>"
+    name = "Haejin Lee"
     print("START receiver - {} @ {}".format(name, datetime.datetime.now()))
 
     ## STEP 1: CONNECT TO THE SERVER
@@ -141,14 +141,31 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     ##################################################
     # START YOUR RDT 3.0 SENDER IMPLEMENTATION BELOW #
     ##################################################
+    
+    while(to_send_size > 0):
+        string = ''
+        
 
+        for s in data[pointer:]: # iterate through data from pointer forward
+            if len(string) == 20: 
+                break
+            if s.isalnum() or s.isspace(): 
+                string+=s
+                
+            
+        message = str(SEQ)+' '+str(ACK)+' '+string # get next 20 bytes in text file
+        checksum(string)
+        message+=' '+string
+        print(message)
+        pointer+=20; # increment pointer
+        
 
-
-
-
-
-
-
+        clientSocket.send(message.encode()) # send message
+        total_packet_sent+=1
+        
+        
+        to_send_size-=20
+        
 
 
     ########################################

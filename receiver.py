@@ -132,8 +132,6 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
 
 
 
-
-
     #################################################
     # END YOUR RDT 3.0 RECEIVER IMPLEMENTATION HERE #
     #################################################
