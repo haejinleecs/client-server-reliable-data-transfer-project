@@ -71,7 +71,7 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
     """
 
     ## STEP 0: PRINT YOUR NAME AND DATE TIME
-    name = "<YOUR NAME>"
+    name = "Haejin Lee"
     print("START receiver - {} @ {}".format(name, datetime.datetime.now()))
 
     ## STEP 1: connect to the server

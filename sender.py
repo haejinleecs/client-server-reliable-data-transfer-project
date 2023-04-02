@@ -125,7 +125,6 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     ACK = 1
     total_packet_sent = 0
     total_packet_recv = 0
-    state_counter = 0
     total_corrupted_pkt_recv = 0
     total_timeout =  0
     
@@ -181,8 +180,6 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
             # rdt_recv(rcv_pkt)
             recv_msg = clientSocket.recv(1024)
             print("Received message {} at {}".format(recv_msg, datetime.datetime.now()))
-            
-            print(ACK, SEQ)
             
             recv_pkt = recv_msg.decode().split("  ")
 
