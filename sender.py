@@ -122,7 +122,7 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     # some helpful variables but you don't have to use all of them
     pointer = 0
     SEQ = 0
-    ACK = 0
+    ACK = 1
     total_packet_sent = 0
     total_packet_recv = 0
     state_counter = 0
@@ -142,10 +142,10 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     ##################################################
     # START YOUR RDT 3.0 SENDER IMPLEMENTATION BELOW #
     ##################################################
-    def create_pkt(SEQ, ACK):
+    def create_pkt(SEQ, ACK, data):
         string = ''
         # get next 20 bytes in Declaration of Independence
-        for s in data[pointer:]: # iterate through data from pointer forward
+        for s in data: # iterate through data from pointer forward
             if len(string) == 20: 
                 break
             if s.isalnum() or s.isspace(): 
@@ -154,47 +154,48 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
         pkt = str(SEQ)+' '+str(ACK)+' '+string+' ' # get next 20 bytes in text file
         ch = checksum(pkt)
         pkt+=ch # add checksum to the packet to be sent
-        pointer+=20 # increment pointer
+        
         return pkt # return packet that you created
         
             
 
     while True and to_send_size > 0:
         try: 
-            recv_msg = clientSocket.recv(1024)
-
-            recv_pkt = recv_msg.decode().split(" ")
-
-            # if rdt_recv(rcv_pkt)
-            recv_SEQ = recv_pkt[0]
-            recv_ACK = recv_pkt[1]
-            recv_payload = recv_pkt[3]
-            recv_checksum = recv_pkt[4]
-            total_packet_recv+=1
-
             # wait for call 0 state OR wait for call 1 state
             if (state_counter%2==0):
-                send_pkt = create_pkt(SEQ, ACK)
+                send_pkt = create_pkt(SEQ, ACK, data[pointer:])
+                pointer+=20 # increment pointer
                 SEQ = 1 if SEQ==0 else 0 # flip SEQ number
   
                 # send packet
                 clientSocket.send(send_pkt.encode())
+                print("Sent message {} at {}".format(send_pkt, datetime.datetime.now()))
 
                 # set timer
                 timer = clientSocket.settimeout(transmission_timeout)
 
                 # increment total packets sent
                 total_packet_sent+=1
-                state_counter+=1
-                to_send_size-=20
 
-            # if uncorrupt packet and the correct ACK
-            if state_counter%2==1 and checksum_verifier(recv_checksum) and ((ACK==0 and recv_ACK==1) or (ACK==1 and recv_ACK==0)):
+                to_send_size-=20
+            
+            recv_msg = clientSocket.recv(1024)
+            print("Received message {} at {}".format(recv_msg, datetime.datetime.now()))
+            
+            recv_pkt = recv_msg.decode().split("  ")
+
+            # rdt_recv(rcv_pkt)
+            recv_ACK = recv_pkt[1]
+            recv_checksum = recv_pkt[12]
+            total_packet_recv+=1
+
+            # in Wait For ACK0/ACK1 State
+            if checksum_verifier(recv_checksum) and ACK!=recv_ACK: # if uncorrupt packet and correct ACK
                 ACK = recv_ACK
                 timer.clearTimeout()
-                state_counter+=1
 
-            if (state_counter%2==1) and (checksum_verifier(recv_checksum) or ACK==recv_ACK):
+            if checksum_verifier(recv_checksum)==False or ACK==recv_ACK: # if corrupt packet or incorrect ACK
+                total_corrupted_pkt_recv+=1
                 continue
 
         except TimeoutError:
@@ -203,6 +204,9 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
 
                 # set timer
                 timer = clientSocket.settimeout(transmission_timeout)
+
+                # increment timeout counter
+                total_timeout+=1
 
                 # increment total packets sent
                 total_packet_sent+=1
