@@ -162,10 +162,9 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     while True and to_send_size > 0:
         try: 
             # wait for call 0 state OR wait for call 1 state
-            if (state_counter%2==0):
+            if SEQ!=ACK:
                 send_pkt = create_pkt(SEQ, ACK, data[pointer:])
                 pointer+=20 # increment pointer
-                SEQ = 1 if SEQ==0 else 0 # flip SEQ number
   
                 # send packet
                 clientSocket.send(send_pkt.encode())
@@ -179,24 +178,28 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
 
                 to_send_size-=20
             
+            # rdt_recv(rcv_pkt)
             recv_msg = clientSocket.recv(1024)
             print("Received message {} at {}".format(recv_msg, datetime.datetime.now()))
             
+            print(ACK, SEQ)
+            
             recv_pkt = recv_msg.decode().split("  ")
 
-            # rdt_recv(rcv_pkt)
-            recv_ACK = recv_pkt[1]
-            recv_checksum = recv_pkt[12]
-            total_packet_recv+=1
-
             # in Wait For ACK0/ACK1 State
-            if checksum_verifier(recv_checksum) and ACK!=recv_ACK: # if uncorrupt packet and correct ACK
-                ACK = recv_ACK
-                timer.clearTimeout()
+            if len(recv_pkt)>0 and ACK==SEQ:
+                recv_ACK = recv_pkt[1]
+                recv_checksum = recv_pkt[12]
+                total_packet_recv+=1
+                if checksum_verifier(recv_checksum) and ACK!=recv_ACK: # if uncorrupt packet and correct ACK
+                    ACK = recv_ACK
+                    SEQ = 1 if SEQ==0 else 0 # flip SEQ number
+                    timer.clearTimeout()
 
-            if checksum_verifier(recv_checksum)==False or ACK==recv_ACK: # if corrupt packet or incorrect ACK
-                total_corrupted_pkt_recv+=1
-                continue
+                if checksum_verifier(recv_checksum)==False or ACK==recv_ACK: # if corrupt packet or incorrect ACK
+                    total_corrupted_pkt_recv+=1
+                    total_packet_recv+=1
+                    continue
 
         except TimeoutError:
             # send packet
