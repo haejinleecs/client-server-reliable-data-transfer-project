@@ -116,6 +116,7 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
 
     # STEP 2: receive file
     
+    ACK = 0
     data = ""
     total_packet_sent = 0
     total_packet_recv = 0
@@ -125,11 +126,51 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
     # START YOUR RDT 3.0 RECEIVER IMPLEMENTATION BELOW #
     ####################################################
 
+    while True:
+        recv_msg = clientSocket.recv(30)
+        print("--> receiver received {} @ {}".format(recv_msg.decode(), datetime.datetime.now()))
+        recv_arr = recv_msg.decode().split()
 
+        if len(recv_msg)<2:
+            break
+        
+        recv_SEQ = recv_arr[0]
+        recv_ACK = recv_arr[1]
+        print('received SEQ {} and ACK {}'.format(recv_SEQ, recv_ACK))
+        total_packet_recv+=1
+        # while we receive corrupt or incorrect package
+        while (not checksum_verifier(recv_msg.decode())) or recv_SEQ != ACK:
+            total_packet_recv+=1
+            if (not checksum_verifier(recv_msg.decode())):
+                total_corrupted_pkt_recv+=1
+                recv_SEQ = 0 if recv_SEQ==1 else 1
+                print("wrong checksum")
 
+            send_pkt = '  '+str(recv_SEQ)+'                      '
+            recv_checksum=checksum(send_pkt)
+            send_pkt+=recv_checksum
+            clientSocket.send(send_pkt.encode()) 
+            total_packet_sent+=1
+            print("<-- receiver sent {} @ {}".format(send_pkt, datetime.datetime.now()))
 
+            recv_msg = clientSocket.recv(30)
+            if len(recv_msg)<2:
+                break
+            print("--> receiver received {} @ {}".format(recv_msg.decode(), datetime.datetime.now()))
+            recv_arr = recv_msg.decode().split()
+            recv_SEQ = recv_arr[0]
+            recv_ACK = recv_arr[1]
+            print('received SEQ {} and ACK {}'.format(recv_SEQ, recv_ACK))
+            total_packet_recv+=1
 
-
+        # uncorrupt packet w/ correct checksum
+        send_pkt = '  '+str(recv_SEQ)+'                      '
+        recv_checksum=checksum(send_pkt)
+        ACK = 1 if ACK == 0 else 0
+        send_pkt+=recv_checksum
+        clientSocket.send(send_pkt.encode()) 
+        total_packet_sent+=1
+        print("<-- receiver sent {} with ACK {} @ {}".format(send_pkt, recv_SEQ, datetime.datetime.now()))
 
 
     #################################################
