@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Last updated: Jan, 2023
-# Author: Phuthipong (Nikko)
+# Last updated: Apr, 2023
+# Author: Haejin Lee
 import sys
 import socket
 import datetime
@@ -141,6 +141,8 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     ##################################################
     # START YOUR RDT 3.0 SENDER IMPLEMENTATION BELOW #
     ##################################################
+
+    # Helper function that creates a new packet given SEQ, ACK, and data
     def create_pkt(SEQ, ACK, data):
         string = ''
         # get next 20 bytes in Declaration of Independence
@@ -148,23 +150,31 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
             if len(string) == 20: 
                 break
             string+=s
-        # create packet to send with SEQ 0
-        pkt = str(SEQ)+' '+str(ACK)+' '+string+' ' # get next 20 bytes in text file
-        ch = checksum(pkt)
-        pkt+=ch # add checksum to the packet to be sent
-        
-        return pkt # return packet that you created
-        
-    send_pkt = create_pkt(SEQ, ACK, data[pointer:]) 
-    while to_send_size > 0:
-        pointer+=20 # increment pointer
 
-        # send packet
+        # append SEQ, ACK and data
+        pkt = str(SEQ)+' '+str(ACK)+' '+string+' ' # get next 20 bytes in text file
+
+        # compute checksum of pkt
+        ch = checksum(pkt)
+
+        # append checksum to the packet to be sent
+        pkt+=ch 
+
+        return pkt # return created packet
+    
+    # START: sender creates a packet
+    send_pkt = create_pkt(SEQ, ACK, data[pointer:]) 
+    pointer+=20 # increment pointer in the text file
+
+    while to_send_size > 0:
+        # sender sends packet
         clientSocket.send(send_pkt.encode("utf-8"))
         # increment total packets sent
         total_packet_sent+=1
-
+        # decrement packets to be sent
         to_send_size-=20
+
+        # change SEQ after sending current SEQ
         if SEQ==1:
             SEQ=0
         else:
@@ -206,7 +216,7 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
                 clientSocket.send(send_pkt.encode("utf-8"))
                 # increment total packets sent
                 total_packet_sent+=1
-                print("<-- sender resent same packete {} at {}".format(send_pkt, datetime.datetime.now()))
+                print("<-- sender resent same packet {} at {}".format(send_pkt, datetime.datetime.now()))
 
                 # receive another packet
                 recv_msg = clientSocket.recv(30).decode("utf-8")
@@ -226,7 +236,8 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
                     ACK=1
                 print("received uncorrupt package! New SEQ {}, new ACK {}".format(SEQ,ACK))
                 total_packet_recv+=1
-                send_pkt = create_pkt(SEQ, ACK, data[pointer:]) 
+                send_pkt = create_pkt(SEQ, ACK, data[pointer:])
+                pointer+=20 # increment pointer in the text file 
         
         # if time out
         except TimeoutError:
