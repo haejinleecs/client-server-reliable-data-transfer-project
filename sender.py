@@ -186,13 +186,13 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
         
 
         try: 
-            # in wait for call 0/wait for call 1 state: try to receive packet
+            # Sender receives packet
             recv_msg = clientSocket.recv(30).decode("utf-8")
             print("--> sender received message {} at {}".format(recv_msg, datetime.datetime.now()))
             
             recv_pkt = recv_msg.split()
 
-            # in Wait For ACK0/ACK1 State
+            # if the packet is empty, terminate
             if len(recv_msg)<2:
                 break
 
@@ -201,35 +201,38 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
 
             corrupt = not checksum_verifier((recv_msg))
 
-            # check if received corrupt packet or incorrect ACK
+            # while sender receives corrupt packet or incorrect ACK #; sender stays in the same wait for ACK 0/1 state
             while corrupt or int(recv_ACK)!=int(ACK):
-                # if corrupt
+                # if the packet is corrupt
                 if corrupt:
                     total_corrupted_pkt_recv+=1 # increment corrupt packet count
                     print("received corrupt packet!")
                     recv_ACK = 1 if ACK == 0 else 0
                 else:
                     print("received packet with wrong ACK or SEQ number")
-                total_packet_recv+=1
+                total_packet_recv+=1 # increment total packet count
                 recv_ACK=int(recv_ACK)
 
+                # sender resends the same packet
                 clientSocket.send(send_pkt.encode("utf-8"))
                 # increment total packets sent
                 total_packet_sent+=1
                 print("<-- sender resent same packet {} at {}".format(send_pkt, datetime.datetime.now()))
 
-                # receive another packet
+                # sender tries to receive another packet from receiver
                 recv_msg = clientSocket.recv(30).decode("utf-8")
                 print("--> sender received NEW message {} at {}".format(recv_msg, datetime.datetime.now()))
                 recv_pkt = recv_msg.split()
                 if len(recv_msg)<2:
                     break
+                # recv_ACK is updated
                 recv_ACK = recv_pkt[0]
+                # update the checksum verifier to check if the packet is corrupt
                 corrupt = not checksum_verifier((recv_msg))
 
-            # if uncorrupt packet and correct ACK
+            # if sender receives an uncorrupt packet and correct ACK #
             if (not corrupt) and ACK==int(recv_ACK): 
-                # change ACK that we expect to get next
+                # change ACK that sender expects to get next
                 if ACK == 1: 
                     ACK=0
                 else:
@@ -237,14 +240,14 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
                 print("received uncorrupt package! New SEQ {}, new ACK {}".format(SEQ,ACK))
                 total_packet_recv+=1
                 send_pkt = create_pkt(SEQ, ACK, data[pointer:])
-                pointer+=20 # increment pointer in the text file 
+                pointer+=20 # increment pointer in the text file after creating a new packet
         
-        # if time out
+        # Sender times out
         except TimeoutError:
             # increment timeout counter
             print("Time out has occurred!")
             total_timeout+=1
-            pass
+            pass # sender will return to start of while loop and send new packet
 
     ########################################
     # END YOUR RDT 3.0 SENDER IMPLEMENTATION HERE #
