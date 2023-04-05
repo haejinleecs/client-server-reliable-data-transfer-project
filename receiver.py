@@ -127,48 +127,54 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
     ####################################################
 
     while True:
-        recv_msg = clientSocket.recv(30)
-        print("--> receiver received {} @ {}".format(recv_msg.decode(), datetime.datetime.now()))
-        recv_arr = recv_msg.decode().split()
+        recv_msg = clientSocket.recv(30).decode("utf-8")
+        print("--> receiver received {} @ {}".format(recv_msg, datetime.datetime.now()))
+        recv_arr = recv_msg.split()
 
         if len(recv_msg)<2:
             break
         
         recv_SEQ = recv_arr[0]
-        recv_ACK = recv_arr[1]
-        print('received SEQ {} and ACK {}'.format(recv_SEQ, recv_ACK))
+        print('received SEQ {}'.format(recv_SEQ))
         total_packet_recv+=1
-        # while we receive corrupt or incorrect package
-        while (not checksum_verifier(recv_msg.decode())) or recv_SEQ != ACK:
-            total_packet_recv+=1
-            if (not checksum_verifier(recv_msg.decode())):
+
+        corrupt = not checksum_verifier(recv_msg)
+
+        # while we receive corrupt or incorrect package; stay in the same state
+        
+        while corrupt or int(recv_SEQ) != int(ACK):
+            if corrupt:
                 total_corrupted_pkt_recv+=1
-                recv_SEQ = 0 if recv_SEQ==1 else 1
-                print("wrong checksum")
+                print("corrupt packet!")
+            
+            if ACK == 1:
+                recv_SEQ = 0
+            else:
+                recv_SEQ = 1
 
             send_pkt = '  '+str(recv_SEQ)+'                      '
             recv_checksum=checksum(send_pkt)
             send_pkt+=recv_checksum
-            clientSocket.send(send_pkt.encode()) 
+            clientSocket.send(send_pkt.encode("utf-8")) 
             total_packet_sent+=1
             print("<-- receiver sent {} @ {}".format(send_pkt, datetime.datetime.now()))
 
-            recv_msg = clientSocket.recv(30)
+            recv_msg = clientSocket.recv(30).decode("utf-8")
             if len(recv_msg)<2:
                 break
-            print("--> receiver received {} @ {}".format(recv_msg.decode(), datetime.datetime.now()))
-            recv_arr = recv_msg.decode().split()
+            print("--> receiver received {} @ {}".format(recv_msg, datetime.datetime.now()))
+            recv_arr = recv_msg.split()
             recv_SEQ = recv_arr[0]
-            recv_ACK = recv_arr[1]
-            print('received SEQ {} and ACK {}'.format(recv_SEQ, recv_ACK))
+            print('received SEQ {}'.format(recv_SEQ))
+            corrupt = not checksum_verifier(recv_msg)
             total_packet_recv+=1
 
-        # uncorrupt packet w/ correct checksum
+        # if uncorrupt packet w/ correct checksum is received; change states
         send_pkt = '  '+str(recv_SEQ)+'                      '
         recv_checksum=checksum(send_pkt)
         ACK = 1 if ACK == 0 else 0
         send_pkt+=recv_checksum
-        clientSocket.send(send_pkt.encode()) 
+        clientSocket.send(send_pkt.encode("utf-8")) 
         total_packet_sent+=1
         print("<-- receiver sent {} with ACK {} @ {}".format(send_pkt, recv_SEQ, datetime.datetime.now()))
 
