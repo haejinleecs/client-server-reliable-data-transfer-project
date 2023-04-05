@@ -164,7 +164,13 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     
     # START: sender creates a packet
     send_pkt = create_pkt(SEQ, ACK, data[pointer:]) 
-    pointer+=20 # increment pointer in the text file
+    # increment pointer in the text file
+    pointer+=20 
+    # change next SEQ after successfully creating packet with current SEQ
+    if SEQ==1:
+        SEQ=0
+    else:
+        SEQ=1
 
     while to_send_size > 0:
         # sender sends packet
@@ -172,13 +178,7 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
         # increment total packets sent
         total_packet_sent+=1
         # decrement packets to be sent
-        to_send_size-=20
-
-        # change SEQ after sending current SEQ
-        if SEQ==1:
-            SEQ=0
-        else:
-            SEQ=1
+  
         print("<-- sender sent message {} at {}".format(send_pkt, datetime.datetime.now()))
 
         # set timer
@@ -232,15 +232,21 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
 
             # if sender receives an uncorrupt packet and correct ACK #
             if (not corrupt) and ACK==int(recv_ACK): 
+                print("received uncorrupt package! current SEQ {}, current ACK is {}".format(SEQ,ACK))
+                total_packet_recv+=1
+                send_pkt = create_pkt(SEQ, ACK, data[pointer:])
+                # change next SEQ after successfully creating packet with current SEQ
+                if SEQ==1:
+                    SEQ=0
+                else:
+                    SEQ=1
+                pointer+=20 # increment pointer in the text file after creating a new packet
+                to_send_size-=20 # decrement to_send_size
                 # change ACK that sender expects to get next
                 if ACK == 1: 
                     ACK=0
                 else:
                     ACK=1
-                print("received uncorrupt package! New SEQ {}, new ACK {}".format(SEQ,ACK))
-                total_packet_recv+=1
-                send_pkt = create_pkt(SEQ, ACK, data[pointer:])
-                pointer+=20 # increment pointer in the text file after creating a new packet
         
         # Sender times out
         except TimeoutError:
