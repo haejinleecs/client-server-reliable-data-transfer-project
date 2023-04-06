@@ -144,7 +144,7 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
 
         # while receiver receives a corrupt or incorrect package; receiver stays within the wait for 0/1 state
         while corrupt or int(recv_SEQ) != int(ACK):
-            # if the packet is corrup
+            # if the packet is corrupt
             if corrupt:
                 total_corrupted_pkt_recv+=1
                 print("corrupt packet!")
@@ -180,6 +180,7 @@ def start_receiver(connection_ID, loss_rate=0.0, corrupt_rate=0.0, max_delay=0.0
         # once receiver receives an uncorrupt packet w/ correct checksum; receiver moves out of wait state
 
         # receiver creates new send_pkt
+        data+=recv_msg[4:-6]
         send_pkt = '  '+str(recv_SEQ)+'                      '
         # add checksum
         recv_checksum=checksum(send_pkt) 

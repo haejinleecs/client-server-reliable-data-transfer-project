@@ -142,6 +142,8 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     # START YOUR RDT 3.0 SENDER IMPLEMENTATION BELOW #
     ##################################################
 
+    count = 200
+
     # Helper function that creates a new packet given SEQ, ACK, and data
     def create_pkt(SEQ, ACK, data):
         string = ''
@@ -172,7 +174,7 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     else:
         SEQ=1
 
-    while to_send_size > 0:
+    while count > 0:
         # sender sends packet
         clientSocket.send(send_pkt.encode("utf-8"))
         # increment total packets sent
@@ -241,7 +243,7 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
                 else:
                     SEQ=1
                 pointer+=20 # increment pointer in the text file after creating a new packet
-                to_send_size-=20 # decrement to_send_size
+                count-=20 # decrement count
                 # change ACK that sender expects to get next
                 if ACK == 1: 
                     ACK=0
