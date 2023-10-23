@@ -113,13 +113,11 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
 
     print("ESTABLISHED A CHANNEL @ {}".format(datetime.datetime.now()))
 
-    ## STEP 2: READ FILE
-    # read file
+    # Read the file
     filename = 'declaration.txt'
     with open(filename, 'r') as f:
         data = f.read()
 
-    # some helpful variables but you don't have to use all of them
     pointer = 0
     SEQ = 0
     ACK = 0
@@ -136,18 +134,13 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
     # send the first 200 characters
     to_send_size = 200
 
-    # STEP 3: SEND FILE
-
-    ##################################################
-    # START YOUR RDT 3.0 SENDER IMPLEMENTATION BELOW #
-    ##################################################
-
+    # Send file using RDT 3.0
     count = 200
 
     # Helper function that creates a new packet given SEQ, ACK, and data
     def create_pkt(SEQ, ACK, data):
         string = ''
-        # get next 20 bytes in Declaration of Independence
+        # get next 20 bytes in file
         for s in data: # iterate through data from pointer forward
             if len(string) == 20: 
                 break
@@ -256,10 +249,6 @@ def start_sender(connection_ID, loss_rate=0, corrupt_rate=0, max_delay=0, transm
             print("Time out has occurred!")
             total_timeout+=1
             pass # sender will return to start of while loop and send new packet
-
-    ########################################
-    # END YOUR RDT 3.0 SENDER IMPLEMENTATION HERE #
-    ########################################
 
     # close the socket
     clientSocket.close() 
